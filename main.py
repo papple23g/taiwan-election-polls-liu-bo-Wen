@@ -1,10 +1,21 @@
+import pylab as plt
 import numpy as np
 from pathlib import Path
 from typing import List, Tuple
 import pandas as pd
 import requests
+import matplotlib as mpl
 
-# get DataFrame from url
+
+def zh_fp(fontsize: float):
+    """ 定義中文字型
+    """
+    return mpl.font_manager.FontProperties(
+        family='Microsoft JhengHei',
+        weight='bold',
+        style='normal',
+        size=fontsize,
+    )
 
 
 def get_html_str(url: str) -> str:
@@ -49,7 +60,7 @@ def get_cos_similarity_and_prefs(row_dict: dict) -> Tuple[float, float, float, f
     """ 計算與實際投票結果的餘弦相似度，以及偏移分量
 
     Returns:
-        float: 餘弦相似度
+        Tuple[float, float, float, float]
     """
 
     gbo_result_arr = np.array([
@@ -87,25 +98,61 @@ def get_cos_similarity_and_prefs(row_dict: dict) -> Tuple[float, float, float, f
     )
 
 
+# 計算 [餘弦相似度] 以及 [偏移分量]
 df["餘弦相似度"], df["pref_g"], df["pref_b"], df["pref_o"] = zip(
     *df.apply(
         get_cos_similarity_and_prefs,
         axis=1,
     )
 )
+
+# 根據 [餘弦相似度] 進行排序
 df.sort_values(by="餘弦相似度", ascending=False, inplace=True)
 
+# 排除重複的調查單位，只留下該單位 [餘弦相似度] 最高的民調結果
+df.drop_duplicates(
+    subset=["委託調查單位"],
+    inplace=True,
+)
 print(df)
-print()
 
-# def
-# print(set(df["委託調查單位"]))
+GREEN_ARR = np.array([98, 245, 110])
+BLUE_ARR = np.array([131, 141, 252])
+ORANGE_ARR = np.array([252, 178, 131])
 
+fig = plt.figure()
+ax = fig.add_subplot(111, projection='3d')
 
-# a_arr = np.array([
-#     -10, -40, -3
-# ])
-
-# cos_similarity = np.dot(gbo_result_arr, a_arr) / \
-#     (np.linalg.norm(gbo_result_arr) * np.linalg.norm(a_arr))
-# print(cos_similarity)
+for row_i, row_dict in df.iterrows():
+    color_weight = sum(
+        max(pref_num, 0)
+        for pref_num in [
+            row_dict["pref_g"],
+            row_dict["pref_b"],
+            row_dict["pref_o"],
+        ]
+    )
+    ax.scatter(
+        row_dict["pref_g"],
+        row_dict["pref_b"],
+        row_dict["pref_o"],
+        s=10,
+        c=[
+            tuple(
+                (
+                    max(row_dict["pref_g"], 0)*GREEN_ARR
+                    + max(row_dict["pref_b"], 0)*BLUE_ARR
+                    + max(row_dict["pref_o"], 0)*ORANGE_ARR
+                )/(255*color_weight)
+            )
+        ],
+        label=row_dict["委託調查單位"],
+    )
+plt.legend(
+    loc="upper left",
+    prop=zh_fp(12),
+)
+ax.set_xlabel("pref_g")
+ax.set_ylabel("pref_b")
+ax.set_zlabel("pref_o")
+plt.show()
