@@ -189,9 +189,15 @@ class ElectionPolls:
             ).days
         )
 
+        # 簡化候選人欄位名稱
+        for person_name in cls.result_support_rate_dict.keys():
+            for raw_col_name in raw_df.columns:
+                if person_name in raw_col_name:
+                    df[person_name] = raw_df[raw_col_name]
+
         # 計算各候選人站票比例 以及 [餘弦相似度]
         *survey_rate_uarr_list, df["cos_similarity"] = zip(
-            *raw_df.apply(
+            *df.apply(
                 get_survey_rate_uarr_and_cos_similarity,
                 axis=1,
             )
@@ -269,7 +275,7 @@ class ElectionPolls:
             x="person_a_support_rate",
             y="cos_similarity",
             text="ORG",
-            size=df["cos_similarity"].map(lambda x: random.random()*10),
+            size=df["survey_date_countdown_days"],
             size_max=60,
         )
 
@@ -334,9 +340,9 @@ class ElectionPollsTaipei2018(ElectionPolls):
     table_index = 2
     result_date = datetime.date(2018, 11, 24)
     result_support_rate_dict = {
-        "柯文哲": 41.06,
-        "丁守中": 40.81,
         "姚文智": 17.28,
+        "丁守中": 40.81,
+        "柯文哲": 41.06,
     }
 
 
