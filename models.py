@@ -1,3 +1,4 @@
+import re
 import plotly.graph_objects as go
 import plotly.express as px
 import numpy as np
@@ -76,7 +77,7 @@ class ElectionPolls:
         # 僅擷取全國民調
         raw_df: pd.DataFrame = raw_df.iloc[
             :raw_df[
-                ~raw_df[raw_df.columns[-1]].str.contains("%")
+                ~raw_df[raw_df.columns[-2]].str.contains("%")
             ].first_valid_index(),
         ]
 
@@ -118,12 +119,18 @@ class ElectionPolls:
                 cos_similarity,
             )
 
-        # 獲取委託調查單位
+        # 獲取委託調查單位: 去除空白、後綴數字、圓括號附註內容
         raw_df = cls.get_raw_df()
         df = pd.DataFrame()
         df["ORG"] = raw_df[raw_df.columns[0]].map(
             lambda unit_str: (
-                unit_str.split("（")[0] if "（" in unit_str else unit_str
+                re.sub(
+                    r"\d+$",
+                    "",
+                    (
+                        unit_str.split("（")[0] if "（" in unit_str else unit_str
+                    ).replace(" ", "")
+                )
             )
         )
 
@@ -196,6 +203,18 @@ class ElectionPollsPresident2016(ElectionPolls):
         "蔡英文": 56.12,
         "朱立倫": 31.04,
         "宋楚瑜": 12.83,
+    }
+
+
+class ElectionPollsTaipei2018(ElectionPolls):
+    """ 2018年臺北市市長選舉民意調查
+    """
+    url = "https://zh.wikipedia.org/wiki/2018年中華民國直轄市長及縣市長選舉民意調查#_臺北市"
+    table_index = 2
+    result_support_rate_dict = {
+        "柯文哲": 41.06,
+        "丁守中": 40.81,
+        "姚文智": 17.28,
     }
 
 
