@@ -2,26 +2,38 @@ import plotly.graph_objects as go
 import plotly.express as px
 import numpy as np
 from pathlib import Path
-from typing import List, Tuple
+from typing import Dict, List, Tuple
 import pandas as pd
 import requests
 
 
-class ElectionPollsPresident2020:
-    url = "https://zh.wikipedia.org/wiki/2020%E5%B9%B4%E4%B8%AD%E8%8F%AF%E6%B0%91%E5%9C%8B%E7%B8%BD%E7%B5%B1%E9%81%B8%E8%88%89%E6%B0%91%E6%84%8F%E8%AA%BF%E6%9F%A5#%E8%94%A1%E8%8B%B1%E6%96%87%EF%BC%8D%E9%9F%93%E5%9C%8B%E7%91%9C_2"
-    table_index = 0
-    result_support_rate_dict = {
-        "蔡英文": 57.13,
-        "韓國瑜": 38.61,
-        "宋楚瑜": 4.25,
-    }
+class ElectionPolls:
+    """ 選舉
+    """
+
+    # 選舉民調網頁
+    url: str = None
+    # 民調資料表 table 在選舉民調網頁中的索引
+    table_index: int = 0
+    # 選舉結果
+    result_support_rate_dict: Dict[str, float]
 
     @classmethod
-    def get_person_name_list(cls):
+    def get_person_name_list(cls) -> List[str]:
+        """ 獲取候選人名單
+
+        Returns:
+            List[str]: 候選人名單
+        """
         return list(cls.result_support_rate_dict.keys())
 
     @classmethod
-    def get_result_support_rate_uarr(cls):
+    def get_result_support_rate_uarr(cls) -> np.ndarray:
+        """ 獲取候選人支持率陣列
+
+        Returns:
+            np.ndarray: 候選人支持率陣列
+        """
         result_support_rate_arr = np.array(
             list(cls.result_support_rate_dict.values())
         )
@@ -31,6 +43,11 @@ class ElectionPollsPresident2020:
 
     @classmethod
     def get_html_str(cls) -> str:
+        """ 獲取網頁內容
+
+        Returns:
+            str: 網頁內容
+        """
         html_path = Path(__file__)/f'../html/{cls.__name__}.html'
 
         if html_path.exists():
@@ -43,7 +60,12 @@ class ElectionPollsPresident2020:
         return response.text
 
     @classmethod
-    def get_raw_df(cls):
+    def get_raw_df(cls) -> pd.DataFrame:
+        """ 獲取網頁上的民調原始資料表格資料
+
+        Returns:
+            pd.DataFrame
+        """
         html_str = cls.get_html_str()
         raw_df_list: List[pd.DataFrame] = pd.read_html(html_str)
         raw_df = raw_df_list[cls.table_index]
@@ -61,15 +83,15 @@ class ElectionPollsPresident2020:
         return raw_df
 
     @classmethod
-    def get_df(cls):
+    def get_df(cls) -> pd.DataFrame:
+        """ 獲取處理後的民調資料
 
-        raw_df = cls.get_raw_df()
-        df = pd.DataFrame()
-        df["ORG"] = raw_df["委託調查單位"].map(
-            lambda unit_str: (
-                unit_str.split("（")[0] if "（" in unit_str else unit_str
-            )
-        )
+        Returns:
+            pd.DataFrame: 包含以下欄位:
+                ORG: 調查組織名稱
+                cos_similarity: 民調與選舉結果的餘弦相似度
+                [候選人名稱...]
+        """
 
         def get_predict_rate_uarr_and_cos_similarity(row_dict: dict) -> Tuple[float, float, float, float]:
             """ 獲取 [民調單位向量各分量] 以及和選舉結果的 [餘弦相似度]
@@ -96,8 +118,16 @@ class ElectionPollsPresident2020:
                 cos_similarity,
             )
 
+        # 獲取委託調查單位
+        raw_df = cls.get_raw_df()
+        df = pd.DataFrame()
+        df["ORG"] = raw_df["委託調查單位"].map(
+            lambda unit_str: (
+                unit_str.split("（")[0] if "（" in unit_str else unit_str
+            )
+        )
+
         # 計算各候選人站票比例 以及 [餘弦相似度]
-        # df["g_ratio"], df["b_ratio"], df["o_ratio"], df["cos_similarity"] = zip(
         *predict_rate_uarr_list, df["cos_similarity"] = zip(
             *raw_df.apply(
                 get_predict_rate_uarr_and_cos_similarity,
@@ -109,10 +139,10 @@ class ElectionPollsPresident2020:
         ):
             df[person_name] = predict_rate_uarr
 
-        # 根據 [餘弦相似度] 進行排序
+        # 根據 [餘弦相似度] 排序資料
         df.sort_values(by="cos_similarity", ascending=False, inplace=True)
 
-        # 排除重複的調查單位，只留下該單位 [餘弦相似度] 最高的民調結果
+        # 排除重複的調查單位，只留下該單位多次的民調中，[餘弦相似度] 最高的民調結果
         df.drop_duplicates(
             subset=["ORG"],
             inplace=True,
@@ -157,4 +187,25 @@ class ElectionPollsPresident2020:
         )
 
 
-ElectionPollsPresident2020.plot_ternary()
+# class ElectionPollsPresident2016(ElectionPolls):
+#     """ 2016年中華民國總統選舉民意調查
+#     """
+#     url = "https://zh.wikipedia.org/wiki/2016年中華民國總統選舉民意調查"
+#     table_index = 2
+#     result_support_rate_dict = {
+#         "蔡英文": 56.12,
+#         "朱立倫": 31.04,
+#         "宋楚瑜": 12.83,
+#     }
+
+
+class ElectionPollsPresident2020(ElectionPolls):
+    """ 2020年中華民國總統選舉民意調查 
+    """
+    url = "https://zh.wikipedia.org/wiki/2020年中華民國總統選舉民意調查"
+    table_index = 0
+    result_support_rate_dict = {
+        "蔡英文": 57.13,
+        "韓國瑜": 38.61,
+        "宋楚瑜": 4.25,
+    }
