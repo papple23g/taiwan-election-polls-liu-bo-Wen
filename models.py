@@ -33,18 +33,16 @@ class ElectionPolls:
         return list(cls.result_support_rate_dict.keys())
 
     @classmethod
-    def get_result_support_rate_uarr(cls) -> np.ndarray:
-        """ 獲取候選人支持率單位向量
+    def get_result_support_percent_arr(cls) -> np.ndarray:
+        """ 獲取候選人支持率佔比
 
         Returns:
-            np.ndarray: 候選人支持率單位向量
+            np.ndarray
         """
         result_support_rate_arr = np.array(
             list(cls.result_support_rate_dict.values())
         )
-        return result_support_rate_arr / (
-            np.linalg.norm(result_support_rate_arr)
-        )
+        return result_support_rate_arr / sum(result_support_rate_arr)
 
     @classmethod
     def get_html_str(cls) -> str:
@@ -139,8 +137,8 @@ class ElectionPolls:
                 [候選人名稱...]
         """
 
-        def get_survey_rate_uarr_and_cos_similarity(row_dict: dict) -> Tuple[float, float, float, float]:
-            """ 獲取 [民調單位向量各分量] 以及和選舉結果的 [餘弦相似度]
+        def get_survey_percent_arr_and_cos_similarity(row_dict: dict) -> Tuple[float, float, float, float]:
+            """ 獲取歸一化後的民調百分比以及和選舉結果的 [餘弦相似度]
 
             Returns:
                 Tuple[float, float, float, float]
@@ -156,15 +154,20 @@ class ElectionPolls:
                     kw in key for kw in cls.result_support_rate_dict.keys()
                 )
             ])
-            survey_support_rate_uarr = survey_support_rate_arr / \
-                np.linalg.norm(survey_support_rate_arr)
+            survey_support_percent_arr = survey_support_rate_arr / \
+                sum(survey_support_rate_arr)
+
+            result_support_percent_arr = cls.get_result_support_percent_arr()
 
             cos_similarity = np.dot(
-                survey_support_rate_uarr, cls.get_result_support_rate_uarr()
+                survey_support_rate_arr, result_support_percent_arr
+            ) / (
+                np.linalg.norm(survey_support_rate_arr) *
+                np.linalg.norm(result_support_percent_arr)
             )
 
             return (
-                *survey_support_rate_uarr.tolist(),
+                *survey_support_percent_arr.tolist(),
                 cos_similarity,
             )
 
@@ -204,17 +207,17 @@ class ElectionPolls:
                 if person_name in raw_col_name:
                     df[person_name] = raw_df[raw_col_name]
 
-        # 計算各候選人站票比例 以及 [餘弦相似度]
-        *survey_rate_uarr_list, df["cos_similarity"] = zip(
+        # 計算各候選人佔票比例 以及 [餘弦相似度]
+        *survey_percent_arr_list, df["cos_similarity"] = zip(
             *df.apply(
-                get_survey_rate_uarr_and_cos_similarity,
+                get_survey_percent_arr_and_cos_similarity,
                 axis=1,
             )
         )
-        for person_name, survey_rate_uarr in zip(
-            cls.result_support_rate_dict.keys(), survey_rate_uarr_list
+        for person_name, survey_percent_arr in zip(
+            cls.result_support_rate_dict.keys(), survey_percent_arr_list
         ):
-            df[person_name] = survey_rate_uarr
+            df[person_name] = survey_percent_arr
 
         # 根據 [餘弦相似度] 排序資料
         df.sort_values(by="cos_similarity", ascending=False, inplace=True)
@@ -245,9 +248,9 @@ class ElectionPolls:
 
         fig.add_trace(
             go.Scatterternary(
-                a=[cls.get_result_support_rate_uarr()[0]],
-                b=[cls.get_result_support_rate_uarr()[1]],
-                c=[cls.get_result_support_rate_uarr()[2]],
+                a=[cls.get_result_support_percent_arr()[0]],
+                b=[cls.get_result_support_percent_arr()[1]],
+                c=[cls.get_result_support_percent_arr()[2]],
                 marker=dict(
                     symbol="star",
                     size=20,
@@ -257,6 +260,29 @@ class ElectionPolls:
         )
 
         fig.update_traces(textposition='bottom center')
+
+        # 調整繪圖範圍
+        margin_percent = 0.01
+        fig.update_ternaries(
+            aaxis=dict(
+                min=min([
+                    df[cls.get_person_name_list()[0]].min(),
+                    cls.get_result_support_percent_arr()[0],
+                ])-margin_percent,
+            ),
+            baxis=dict(
+                min=min([
+                    df[cls.get_person_name_list()[1]].min(),
+                    cls.get_result_support_percent_arr()[1],
+                ])-margin_percent,
+            ),
+            caxis=dict(
+                min=min([
+                    df[cls.get_person_name_list()[2]].min(),
+                    cls.get_result_support_percent_arr()[2],
+                ])-margin_percent,
+            ),
+        )
 
         fig.show(
             config={
@@ -312,6 +338,7 @@ class ElectionPolls:
             xaxis_title=f'{person_name_a} 佔票比例',
             yaxis_title='cos_similarity',
         )
+
         fig.show(
             config={
                 'scrollZoom': True,
@@ -395,9 +422,9 @@ class ElectionPollsTaiChung2018(ElectionPolls):
 
 
 class ElectionPollsTainan2018(ElectionPolls):
-    """ 2018年台南市市長選舉民意調查
+    """ 2018年臺南市市長選舉民意調查
     """
-    url = "https://zh.wikipedia.org/wiki/2018年中華民國直轄市長及縣市長選舉民意調查#_台南市"
+    url = "https://zh.wikipedia.org/wiki/2018年中華民國直轄市長及縣市長選舉民意調查#_臺南市"
     table_index = 13
     result_date = datetime.date(2018, 11, 24)
     result_support_rate_dict = {

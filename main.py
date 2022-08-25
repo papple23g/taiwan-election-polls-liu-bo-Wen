@@ -19,17 +19,17 @@ if __name__ == '__main__':
     # ElectionPollsTaoyuan2018.plot_scatter()
     # ElectionPollsTaiChung2018.plot_scatter()
     # ElectionPollsTainan2018.plot_scatter()
-    ElectionPollsKaohsiung2018.plot_scatter()
-    # ElectionPollsPresident2020.plot_ternary()
+    # ElectionPollsKaohsiung2018.plot_scatter()
+    ElectionPollsPresident2020.plot_ternary()
 
     # # debug
     # # ---------------------------------------
     # raw_df = (
-    #     ElectionPollsPresident2012
+    #     ElectionPollsPresident2016
     # ).get_raw_df()
     # print(raw_df)
 
     # df = (
-    #     ElectionPollsPresident2012
+    #     ElectionPollsPresident2016
     # ).get_df()
     # print(df)
