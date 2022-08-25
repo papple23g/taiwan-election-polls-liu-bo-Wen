@@ -34,10 +34,10 @@ class ElectionPolls:
 
     @classmethod
     def get_result_support_rate_uarr(cls) -> np.ndarray:
-        """ 獲取候選人支持率陣列
+        """ 獲取候選人支持率單位向量
 
         Returns:
-            np.ndarray: 候選人支持率陣列
+            np.ndarray: 候選人支持率單位向量
         """
         result_support_rate_arr = np.array(
             list(cls.result_support_rate_dict.values())
@@ -73,13 +73,13 @@ class ElectionPolls:
         """
 
         def is_not_content_row(sr: np.ndarray) -> bool:
-            """ 判斷是否為內容列
+            """ 判斷是否為非內容列
 
             Args:
                 sr (np.array): 欄位值陣列
 
             Returns:
-                bool: 是否為內容列
+                bool: 是否為非內容列
             """
             if "%" not in sr[-1].replace("％", "%"):
                 return True
@@ -88,6 +88,7 @@ class ElectionPolls:
                 for v in sr[1:]
             ])
 
+        # 獲取原始資料表
         html_str = cls.get_html_str()
         raw_df_list: List[pd.DataFrame] = pd.read_html(html_str)
         raw_df = raw_df_list[cls.table_index]
@@ -112,6 +113,14 @@ class ElectionPolls:
 
     @classmethod
     def formate_survey_date_str(cls, survey_date_str: str) -> str:
+        """ 格式化民調日期字串，如: '2020年01月01日' -> '2020-01-01'
+
+        Args:
+            survey_date_str (str): 民調日期字串
+
+        Returns:
+            str
+        """
         return (
             survey_date_str
             .replace("年", "-")
@@ -220,6 +229,8 @@ class ElectionPolls:
 
     @classmethod
     def plot_ternary(cls):
+        """ 繪製三元相圖點陣圖
+        """
 
         df = cls.get_df()
 
@@ -255,6 +266,9 @@ class ElectionPolls:
 
     @classmethod
     def plot_scatter(cls):
+        """ 繪製二元點陣圖
+        """
+
         df = cls.get_df()
 
         get_person_name_list = cls.get_person_name_list()
