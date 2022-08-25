@@ -8,7 +8,7 @@ import requests
 
 
 class ElectionPolls:
-    """ 選舉
+    """ 選舉民調
     """
 
     # 選舉民調網頁
@@ -121,7 +121,7 @@ class ElectionPolls:
         # 獲取委託調查單位
         raw_df = cls.get_raw_df()
         df = pd.DataFrame()
-        df["ORG"] = raw_df["委託調查單位"].map(
+        df["ORG"] = raw_df[raw_df.columns[0]].map(
             lambda unit_str: (
                 unit_str.split("（")[0] if "（" in unit_str else unit_str
             )
@@ -187,16 +187,16 @@ class ElectionPolls:
         )
 
 
-# class ElectionPollsPresident2016(ElectionPolls):
-#     """ 2016年中華民國總統選舉民意調查
-#     """
-#     url = "https://zh.wikipedia.org/wiki/2016年中華民國總統選舉民意調查"
-#     table_index = 2
-#     result_support_rate_dict = {
-#         "蔡英文": 56.12,
-#         "朱立倫": 31.04,
-#         "宋楚瑜": 12.83,
-#     }
+class ElectionPollsPresident2016(ElectionPolls):
+    """ 2016年中華民國總統選舉民意調查
+    """
+    url = "https://zh.wikipedia.org/wiki/2016年中華民國總統選舉民意調查"
+    table_index = 2
+    result_support_rate_dict = {
+        "蔡英文": 56.12,
+        "朱立倫": 31.04,
+        "宋楚瑜": 12.83,
+    }
 
 
 class ElectionPollsPresident2020(ElectionPolls):
