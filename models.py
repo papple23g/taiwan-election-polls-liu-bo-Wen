@@ -298,7 +298,24 @@ class ElectionPolls:
             xaxis_title=f'{person_name_a} 佔票比例',
             yaxis_title='cos_similarity',
         )
-        fig.show()
+        fig.show(
+            config={
+                'scrollZoom': True,
+            }
+        )
+
+
+class ElectionPollsPresident2012(ElectionPolls):
+    """ 2012年中華民國總統選舉全國民意調查
+    """
+    url = "https://zh.wikipedia.org/wiki/2012年中華民國總統選舉全國民意調查#候選人支持度"
+    table_index = 0
+    result_date = datetime.date(2012, 1, 14)
+    result_support_rate_dict = {
+        "蔡英文": 45.63,
+        "馬英九": 51.60,
+        "宋楚瑜": 2.77,
+    }
 
 
 class ElectionPollsPresident2016(ElectionPolls):
@@ -312,25 +329,6 @@ class ElectionPollsPresident2016(ElectionPolls):
         "朱立倫": 31.04,
         "宋楚瑜": 12.83,
     }
-
-
-class ElectionPollsPresident2020(ElectionPolls):
-    """ 2020年中華民國總統選舉民意調查 
-    """
-    url = "https://zh.wikipedia.org/wiki/2020年中華民國總統選舉民意調查#英德配－國政配－瑜湘配"
-    table_index = 0
-    result_date = datetime.date(2020, 1, 11)
-    result_support_rate_dict = {
-        "蔡英文": 57.13,
-        "韓國瑜": 38.61,
-        "宋楚瑜": 4.25,
-    }
-
-    @classmethod
-    def formate_survey_date_str(cls, survey_date_str: str) -> str:
-        _, survey_date_str = survey_date_str.split("－")
-        survey_date_m, survey_date_d = survey_date_str.split("-")
-        return f"2019-{survey_date_m}-{survey_date_d}"
 
 
 class ElectionPollsTaipei2018(ElectionPolls):
@@ -382,6 +380,18 @@ class ElectionPollsTaiChung2018(ElectionPolls):
     }
 
 
+class ElectionPollsTainan2018(ElectionPolls):
+    """ 2018年台南市市長選舉民意調查
+    """
+    url = "https://zh.wikipedia.org/wiki/2018年中華民國直轄市長及縣市長選舉民意調查#_台南市"
+    table_index = 13
+    result_date = datetime.date(2018, 11, 24)
+    result_support_rate_dict = {
+        "黃偉哲": 38.01,
+        "高思博": 32.36,
+    }
+
+
 class ElectionPollsKaohsiung2018(ElectionPolls):
     """ 2018年高雄市市長選舉民意調查
     """
@@ -392,3 +402,22 @@ class ElectionPollsKaohsiung2018(ElectionPolls):
         "陳其邁": 44.79,
         "韓國瑜": 53.86,
     }
+
+
+class ElectionPollsPresident2020(ElectionPolls):
+    """ 2020年中華民國總統選舉民意調查 
+    """
+    url = "https://zh.wikipedia.org/wiki/2020年中華民國總統選舉民意調查#英德配－國政配－瑜湘配"
+    table_index = 0
+    result_date = datetime.date(2020, 1, 11)
+    result_support_rate_dict = {
+        "蔡英文": 57.13,
+        "韓國瑜": 38.61,
+        "宋楚瑜": 4.25,
+    }
+
+    @classmethod
+    def formate_survey_date_str(cls, survey_date_str: str) -> str:
+        _, survey_date_str = survey_date_str.split("－")
+        survey_date_m, survey_date_d = survey_date_str.split("-")
+        return f"2019-{survey_date_m}-{survey_date_d}"
