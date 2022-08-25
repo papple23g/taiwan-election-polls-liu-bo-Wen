@@ -1,20 +1,34 @@
 from models import (
+    ElectionPollsKaohsiung2018,
     ElectionPollsPresident2016,
     ElectionPollsPresident2020,
     ElectionPollsTaipei2018,
     ElectionPollsNewTaipei2018,
+    ElectionPollsKaohsiung2018,
 )
 
-import pandas as pd
-import pylab as plt
-
 if __name__ == '__main__':
-    # ElectionPollsPresident2020.plot_ternary()
     # ElectionPollsPresident2016.plot_ternary()
-    # ElectionPollsTaipei2018.plot_ternary()
+    # ElectionPollsPresident2020.plot_ternary()
 
-    # raw_df = ElectionPollsNewTaipei2018.get_raw_df()
+    # ElectionPollsTaipei2018.plot_ternary()
+    # ElectionPollsNewTaipei2018.plot_scatter()
+    ElectionPollsKaohsiung2018.plot_scatter()
+
+    # debug
+    # ---------------------------------------
+    # raw_df = (
+    #     # ElectionPollsKaohsiung2018
+    #     # ElectionPollsPresident2016
+    #     # ElectionPollsPresident2020
+    #     # ElectionPollsTaipei2018
+    #     # ElectionPollsNewTaipei2018
+    #     ElectionPollsKaohsiung2018
+    # ).get_raw_df()
     # print(raw_df)
 
-    # df = ElectionPollsNewTaipei2018.get_df()
-    ElectionPollsNewTaipei2018.plot_scatter()
+    # df = (
+    #     # ElectionPollsTaipei2018
+    #     ElectionPollsKaohsiung2018
+    # ).get_df()
+    # print(df)

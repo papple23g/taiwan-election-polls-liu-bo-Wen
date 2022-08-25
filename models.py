@@ -1,3 +1,5 @@
+import datetime
+import random
 import re
 import plotly.graph_objects as go
 import plotly.express as px
@@ -18,6 +20,8 @@ class ElectionPolls:
     table_index: int = 0
     # 選舉結果
     result_support_rate_dict: Dict[str, float]
+    # 選舉日期
+    result_date: datetime.date = None
 
     @classmethod
     def get_person_name_list(cls) -> List[str]:
@@ -67,6 +71,23 @@ class ElectionPolls:
         Returns:
             pd.DataFrame
         """
+
+        def is_not_content_row(sr: np.ndarray) -> bool:
+            """ 判斷是否為內容列
+
+            Args:
+                sr (np.array): 欄位值陣列
+
+            Returns:
+                bool: 是否為內容列
+            """
+            if "%" not in sr[-1].replace("％", "%"):
+                return True
+            return all([
+                v == sr[0]
+                for v in sr[1:]
+            ])
+
         html_str = cls.get_html_str()
         raw_df_list: List[pd.DataFrame] = pd.read_html(html_str)
         raw_df = raw_df_list[cls.table_index]
@@ -80,11 +101,23 @@ class ElectionPolls:
         # 僅擷取全國民調
         raw_df: pd.DataFrame = raw_df.iloc[
             :raw_df[
-                ~raw_df[raw_df.columns[-1]].str.contains("%")
+                raw_df.apply(
+                    is_not_content_row,
+                    axis=1,
+                )
             ].first_valid_index(),
         ]
 
         return raw_df
+
+    @classmethod
+    def formate_survey_date_str(cls, survey_date_str: str) -> str:
+        return (
+            survey_date_str
+            .replace("年", "-")
+            .replace("月", "-")
+            .replace("日", "")
+        )
 
     @classmethod
     def get_df(cls) -> pd.DataFrame:
@@ -97,28 +130,32 @@ class ElectionPolls:
                 [候選人名稱...]
         """
 
-        def get_predict_rate_uarr_and_cos_similarity(row_dict: dict) -> Tuple[float, float, float, float]:
+        def get_survey_rate_uarr_and_cos_similarity(row_dict: dict) -> Tuple[float, float, float, float]:
             """ 獲取 [民調單位向量各分量] 以及和選舉結果的 [餘弦相似度]
 
             Returns:
                 Tuple[float, float, float, float]
             """
-            predict_support_rate_arr = np.array([
-                float(row_dict[key].replace("%", ""))
+            survey_support_rate_arr = np.array([
+                float(
+                    row_dict[key]
+                    .replace("％", "")
+                    .replace("%", "")
+                )
                 for key in row_dict.keys()
                 if any(
                     kw in key for kw in cls.result_support_rate_dict.keys()
                 )
             ])
-            predict_support_rate_uarr = predict_support_rate_arr / \
-                np.linalg.norm(predict_support_rate_arr)
+            survey_support_rate_uarr = survey_support_rate_arr / \
+                np.linalg.norm(survey_support_rate_arr)
 
             cos_similarity = np.dot(
-                predict_support_rate_uarr, cls.get_result_support_rate_uarr()
+                survey_support_rate_uarr, cls.get_result_support_rate_uarr()
             )
 
             return (
-                *predict_support_rate_uarr.tolist(),
+                *survey_support_rate_uarr.tolist(),
                 cos_similarity,
             )
 
@@ -140,17 +177,29 @@ class ElectionPolls:
             )
         )
 
+        # 獲取調查結束時間
+        df["survey_date"] = pd.to_datetime(
+            raw_df[raw_df.columns[1]].map(cls.formate_survey_date_str)
+        )
+
+        # 獲取調查結束時間離選舉的天數
+        df["survey_date_countdown_days"] = df["survey_date"].map(
+            lambda date: (
+                cls.result_date - date.date()
+            ).days
+        )
+
         # 計算各候選人站票比例 以及 [餘弦相似度]
-        *predict_rate_uarr_list, df["cos_similarity"] = zip(
+        *survey_rate_uarr_list, df["cos_similarity"] = zip(
             *raw_df.apply(
-                get_predict_rate_uarr_and_cos_similarity,
+                get_survey_rate_uarr_and_cos_similarity,
                 axis=1,
             )
         )
-        for person_name, predict_rate_uarr in zip(
-            cls.result_support_rate_dict.keys(), predict_rate_uarr_list
+        for person_name, survey_rate_uarr in zip(
+            cls.result_support_rate_dict.keys(), survey_rate_uarr_list
         ):
-            df[person_name] = predict_rate_uarr
+            df[person_name] = survey_rate_uarr
 
         # 根據 [餘弦相似度] 排序資料
         df.sort_values(by="cos_similarity", ascending=False, inplace=True)
@@ -174,6 +223,7 @@ class ElectionPolls:
             b=cls.get_person_name_list()[1],
             c=cls.get_person_name_list()[2],
             text="ORG",
+            size=df["survey_date_countdown_days"],
         )
 
         fig.add_trace(
@@ -183,19 +233,17 @@ class ElectionPolls:
                 c=[cls.get_result_support_rate_uarr()[2]],
                 marker=dict(
                     symbol="star",
+                    size=20,
                 ),
                 text="選舉結果",
-                showlegend=False,
-                textposition="bottom center",
             )
         )
 
-        fig.update_traces(textposition='top center')
+        fig.update_traces(textposition='bottom center')
 
         fig.show(
             config={
-                # "modeBarButtons": "modeBarButtons"
-                "displayModeBar": True,
+                'scrollZoom': True,
             }
         )
 
@@ -211,9 +259,9 @@ class ElectionPolls:
             df[person_name_b]+df[person_name_a]
         )
         result_person_a_support_rate = (
-            ElectionPollsNewTaipei2018.result_support_rate_dict[person_name_a] / (
-                ElectionPollsNewTaipei2018.result_support_rate_dict[person_name_b] +
-                ElectionPollsNewTaipei2018.result_support_rate_dict[person_name_a]
+            cls.result_support_rate_dict[person_name_a] / (
+                cls.result_support_rate_dict[person_name_b] +
+                cls.result_support_rate_dict[person_name_a]
             )
         )
         fig = px.scatter(
@@ -221,6 +269,7 @@ class ElectionPolls:
             x="person_a_support_rate",
             y="cos_similarity",
             text="ORG",
+            size=df["cos_similarity"].map(lambda x: random.random()*10),
             size_max=60,
         )
 
@@ -249,8 +298,9 @@ class ElectionPolls:
 class ElectionPollsPresident2016(ElectionPolls):
     """ 2016年中華民國總統選舉民意調查
     """
-    url = "https://zh.wikipedia.org/wiki/2016年中華民國總統選舉民意調查"
+    url = "https://zh.wikipedia.org/wiki/2016年中華民國總統選舉民意調查#洪秀柱廢止提名後"
     table_index = 2
+    result_date = datetime.date(2016, 1, 16)
     result_support_rate_dict = {
         "蔡英文": 56.12,
         "朱立倫": 31.04,
@@ -261,13 +311,20 @@ class ElectionPollsPresident2016(ElectionPolls):
 class ElectionPollsPresident2020(ElectionPolls):
     """ 2020年中華民國總統選舉民意調查 
     """
-    url = "https://zh.wikipedia.org/wiki/2020年中華民國總統選舉民意調查"
+    url = "https://zh.wikipedia.org/wiki/2020年中華民國總統選舉民意調查#英德配－國政配－瑜湘配"
     table_index = 0
+    result_date = datetime.date(2020, 1, 11)
     result_support_rate_dict = {
         "蔡英文": 57.13,
         "韓國瑜": 38.61,
         "宋楚瑜": 4.25,
     }
+
+    @classmethod
+    def formate_survey_date_str(cls, survey_date_str: str) -> str:
+        _, survey_date_str = survey_date_str.split("－")
+        survey_date_m, survey_date_d = survey_date_str.split("-")
+        return f"2019-{survey_date_m}-{survey_date_d}"
 
 
 class ElectionPollsTaipei2018(ElectionPolls):
@@ -275,6 +332,7 @@ class ElectionPollsTaipei2018(ElectionPolls):
     """
     url = "https://zh.wikipedia.org/wiki/2018年中華民國直轄市長及縣市長選舉民意調查#_臺北市"
     table_index = 2
+    result_date = datetime.date(2018, 11, 24)
     result_support_rate_dict = {
         "柯文哲": 41.06,
         "丁守中": 40.81,
@@ -287,7 +345,20 @@ class ElectionPollsNewTaipei2018(ElectionPolls):
     """
     url = "https://zh.wikipedia.org/wiki/2018年中華民國直轄市長及縣市長選舉民意調查#_新北市"
     table_index = 5
+    result_date = datetime.date(2018, 11, 24)
     result_support_rate_dict = {
         "侯友宜": 57.14,
         "蘇貞昌": 42.85,
+    }
+
+
+class ElectionPollsKaohsiung2018(ElectionPolls):
+    """ 2018年高雄市市長選舉民意調查
+    """
+    url = "https://zh.wikipedia.org/wiki/2018年中華民國直轄市長及縣市長選舉民意調查#_高雄市"
+    table_index = 16
+    result_date = datetime.date(2018, 11, 24)
+    result_support_rate_dict = {
+        "陳其邁": 44.79,
+        "韓國瑜": 53.86,
     }
