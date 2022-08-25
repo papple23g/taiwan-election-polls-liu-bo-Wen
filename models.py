@@ -347,8 +347,32 @@ class ElectionPollsNewTaipei2018(ElectionPolls):
     table_index = 5
     result_date = datetime.date(2018, 11, 24)
     result_support_rate_dict = {
-        "侯友宜": 57.14,
         "蘇貞昌": 42.85,
+        "侯友宜": 57.14,
+    }
+
+
+class ElectionPollsTaoyuan2018(ElectionPolls):
+    """ 2018年桃園市市長選舉民意調查
+    """
+    url = "https://zh.wikipedia.org/wiki/2018年中華民國直轄市長及縣市長選舉民意調查#_桃園市"
+    table_index = 8
+    result_date = datetime.date(2018, 11, 24)
+    result_support_rate_dict = {
+        "鄭文燦": 53.46,
+        "陳學聖": 39.41,
+    }
+
+
+class ElectionPollsTaiChung2018(ElectionPolls):
+    """ 2018年台中市市長選舉民意調查
+    """
+    url = "https://zh.wikipedia.org/wiki/2018年中華民國直轄市長及縣市長選舉民意調查#_台中市"
+    table_index = 10
+    result_date = datetime.date(2018, 11, 24)
+    result_support_rate_dict = {
+        "林佳龍": 43.34,
+        "盧秀燕": 56.56,
     }
 
 
