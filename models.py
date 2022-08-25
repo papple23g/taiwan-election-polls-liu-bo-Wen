@@ -74,10 +74,13 @@ class ElectionPolls:
         # 重整欄位列表
         raw_df.columns = [cols[-1] for cols in raw_df.columns]
 
+        # 移除空資料的欄位
+        raw_df = raw_df.dropna(axis=1)
+
         # 僅擷取全國民調
         raw_df: pd.DataFrame = raw_df.iloc[
             :raw_df[
-                ~raw_df[raw_df.columns[-2]].str.contains("%")
+                ~raw_df[raw_df.columns[-1]].str.contains("%")
             ].first_valid_index(),
         ]
 
@@ -129,7 +132,10 @@ class ElectionPolls:
                     "",
                     (
                         unit_str.split("（")[0] if "（" in unit_str else unit_str
-                    ).replace(" ", "")
+                    )
+                    .replace(" ", "")
+                    # 處理同單位變名
+                    .replace("東森新聞", "東森")
                 )
             )
         )
@@ -193,6 +199,52 @@ class ElectionPolls:
             }
         )
 
+    @classmethod
+    def plot_scatter(cls):
+        df = cls.get_df()
+
+        get_person_name_list = cls.get_person_name_list()
+        assert len(get_person_name_list) == 2, "只能繪製兩個候選人的民調"
+        person_name_a, person_name_b = cls.get_person_name_list()
+
+        df['person_a_support_rate'] = df[person_name_a] / (
+            df[person_name_b]+df[person_name_a]
+        )
+        result_person_a_support_rate = (
+            ElectionPollsNewTaipei2018.result_support_rate_dict[person_name_a] / (
+                ElectionPollsNewTaipei2018.result_support_rate_dict[person_name_b] +
+                ElectionPollsNewTaipei2018.result_support_rate_dict[person_name_a]
+            )
+        )
+        fig = px.scatter(
+            df,
+            x="person_a_support_rate",
+            y="cos_similarity",
+            text="ORG",
+            size_max=60,
+        )
+
+        fig.add_trace(
+            go.Scatter(
+                x=[result_person_a_support_rate, result_person_a_support_rate],
+                y=[df['cos_similarity'].min(), 1.005],
+                mode='lines',
+                line=dict(
+                    color='rgb(255, 0, 0)',
+                    width=2,
+                    dash="dash",
+                ),
+            )
+        )
+        fig.update_traces(textposition='top center')
+
+        fig.update_layout(
+            title='person_a_support_rate vs cos_similarity',
+            xaxis_title=f'{person_name_a} 佔票比例',
+            yaxis_title='cos_similarity',
+        )
+        fig.show()
+
 
 class ElectionPollsPresident2016(ElectionPolls):
     """ 2016年中華民國總統選舉民意調查
@@ -203,6 +255,18 @@ class ElectionPollsPresident2016(ElectionPolls):
         "蔡英文": 56.12,
         "朱立倫": 31.04,
         "宋楚瑜": 12.83,
+    }
+
+
+class ElectionPollsPresident2020(ElectionPolls):
+    """ 2020年中華民國總統選舉民意調查 
+    """
+    url = "https://zh.wikipedia.org/wiki/2020年中華民國總統選舉民意調查"
+    table_index = 0
+    result_support_rate_dict = {
+        "蔡英文": 57.13,
+        "韓國瑜": 38.61,
+        "宋楚瑜": 4.25,
     }
 
 
@@ -218,13 +282,12 @@ class ElectionPollsTaipei2018(ElectionPolls):
     }
 
 
-class ElectionPollsPresident2020(ElectionPolls):
-    """ 2020年中華民國總統選舉民意調查 
+class ElectionPollsNewTaipei2018(ElectionPolls):
+    """ 2018年新北市市長選舉民意調查
     """
-    url = "https://zh.wikipedia.org/wiki/2020年中華民國總統選舉民意調查"
-    table_index = 0
+    url = "https://zh.wikipedia.org/wiki/2018年中華民國直轄市長及縣市長選舉民意調查#_新北市"
+    table_index = 5
     result_support_rate_dict = {
-        "蔡英文": 57.13,
-        "韓國瑜": 38.61,
-        "宋楚瑜": 4.25,
+        "侯友宜": 57.14,
+        "蘇貞昌": 42.85,
     }
