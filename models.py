@@ -1,5 +1,4 @@
 import datetime
-import random
 import re
 import plotly.graph_objects as go
 import plotly.express as px
