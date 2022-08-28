@@ -126,13 +126,20 @@ class ElectionPolls:
         )
 
     @classmethod
-    def get_df(cls) -> pd.DataFrame:
+    def get_df(
+        cls,
+        survey_support_rate_in_percent_bool: bool = False
+    ) -> pd.DataFrame:
         """ 獲取處理後的民調資料
+
+        Args:
+            survey_support_rate_in_percent_bool (bool, optional):
+                是否將民調支持率轉換為百分比文字. Defaults to False.
 
         Returns:
             pd.DataFrame: 包含以下欄位:
-                ORG: 調查組織名稱
-                cos_similarity: 民調與選舉結果的餘弦相似度
+                調查單位: 調查組織名稱
+                民調準確度: 民調與選舉結果的餘弦相似度
                 [候選人名稱...]
         """
 
@@ -173,7 +180,7 @@ class ElectionPolls:
         # 獲取委託調查單位: 去除空白、後綴數字、圓括號附註內容
         raw_df = cls.get_raw_df()
         df = pd.DataFrame()
-        df["ORG"] = raw_df[raw_df.columns[0]].map(
+        df["調查單位"] = raw_df[raw_df.columns[0]].map(
             lambda unit_str: (
                 re.sub(
                     r"\d+$",
@@ -189,12 +196,12 @@ class ElectionPolls:
         )
 
         # 獲取調查結束時間
-        df["survey_date"] = pd.to_datetime(
+        df["調查時間"] = pd.to_datetime(
             raw_df[raw_df.columns[1]].map(cls.formate_survey_date_str)
         )
 
         # 獲取調查結束時間離選舉的天數
-        df["survey_date_countdown_days"] = df["survey_date"].map(
+        df["選舉倒數"] = df["調查時間"].map(
             lambda date: (
                 cls.result_date - date.date()
             ).days
@@ -207,7 +214,7 @@ class ElectionPolls:
                     df[person_name] = raw_df[raw_col_name]
 
         # 計算各候選人佔票比例 以及 [餘弦相似度]
-        *survey_percent_arr_list, df["cos_similarity"] = zip(
+        *survey_percent_arr_list, df["民調準確度"] = zip(
             *df.apply(
                 get_survey_percent_arr_and_cos_similarity,
                 axis=1,
@@ -217,15 +224,31 @@ class ElectionPolls:
             cls.result_support_rate_dict.keys(), survey_percent_arr_list
         ):
             df[person_name] = survey_percent_arr
+            if survey_support_rate_in_percent_bool:
+                df[person_name] = df[person_name].map(
+                    lambda percent: f"{percent:.2%}"
+                )
+        df["民調準確度"] = df["民調準確度"].map(
+            lambda cos_similarity: round(cos_similarity, 5)
+        )
 
         # 根據 [餘弦相似度] 排序資料
-        df.sort_values(by="cos_similarity", ascending=False, inplace=True)
+        df.sort_values(by="民調準確度", ascending=False, inplace=True)
 
         # 排除重複的調查單位，只留下該單位多次的民調中，[餘弦相似度] 最高的民調結果
         df.drop_duplicates(
-            subset=["ORG"],
+            subset=["調查單位"],
             inplace=True,
         )
+
+        # 給予排名欄位
+        df.insert(
+            loc=0,
+            column='排名',
+            value=range(1, len(df) + 1),
+        )
+
+        df["調查時間"] = df["調查時間"].map(lambda date: date.date())
 
         return df
 
@@ -241,8 +264,8 @@ class ElectionPolls:
             a=cls.get_person_name_list()[0],
             b=cls.get_person_name_list()[1],
             c=cls.get_person_name_list()[2],
-            text="ORG",
-            size=df["survey_date_countdown_days"],
+            text="調查單位",
+            size=df["選舉倒數"],
         )
 
         fig.add_trace(
@@ -250,11 +273,15 @@ class ElectionPolls:
                 a=[cls.get_result_support_percent_arr()[0]],
                 b=[cls.get_result_support_percent_arr()[1]],
                 c=[cls.get_result_support_percent_arr()[2]],
+                mode="markers+text",
                 marker=dict(
                     symbol="star",
                     size=20,
                 ),
-                text="選舉結果",
+                text=["選舉結果"],
+                textfont=dict(
+                    color="red",
+                )
             )
         )
 
@@ -312,16 +339,16 @@ class ElectionPolls:
         fig = px.scatter(
             df,
             x="person_a_support_rate",
-            y="cos_similarity",
-            text="ORG",
-            size=df["survey_date_countdown_days"],
+            y="民調準確度",
+            text="調查單位",
+            size=df["選舉倒數"],
             size_max=60,
         )
 
         fig.add_trace(
             go.Scatter(
                 x=[result_person_a_support_rate, result_person_a_support_rate],
-                y=[df['cos_similarity'].min(), 1.005],
+                y=[df['民調準確度'].min(), 1.005],
                 mode='lines',
                 line=dict(
                     color='rgb(255, 0, 0)',
@@ -333,9 +360,12 @@ class ElectionPolls:
         fig.update_traces(textposition='top center')
 
         fig.update_layout(
-            title='person_a_support_rate vs cos_similarity',
+            title=(
+                f'{cls.__doc__.strip()} '
+                f'({person_name_b} vs {person_name_a})'
+            ),
             xaxis_title=f'{person_name_a} 佔票比例',
-            yaxis_title='cos_similarity',
+            yaxis_title='民調準確度',
         )
 
         fig.show(
@@ -453,7 +483,7 @@ class ElectionPollsPresident2020(ElectionPolls):
     result_support_rate_dict = {
         "蔡英文": 57.13,
         "韓國瑜": 38.61,
-        "宋楚瑜": 4.25,
+        "宋楚瑜": 4.26,
     }
 
     @classmethod

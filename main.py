@@ -15,12 +15,13 @@ if __name__ == '__main__':
     # ElectionPollsPresident2012.plot_ternary()
     # ElectionPollsPresident2016.plot_ternary()
     # ElectionPollsTaipei2018.plot_ternary()
-    # ElectionPollsNewTaipei2018.plot_scatter()
+    ElectionPollsNewTaipei2018.plot_scatter()
     # ElectionPollsTaoyuan2018.plot_scatter()
     # ElectionPollsTaiChung2018.plot_scatter()
     # ElectionPollsTainan2018.plot_scatter()
     # ElectionPollsKaohsiung2018.plot_scatter()
-    ElectionPollsPresident2020.plot_ternary()
+
+    # ElectionPollsPresident2020.plot_ternary()
 
     # # debug
     # # ---------------------------------------
@@ -30,6 +31,13 @@ if __name__ == '__main__':
     # print(raw_df)
 
     # df = (
-    #     ElectionPollsPresident2016
-    # ).get_df()
-    # print(df)
+    #     ElectionPollsPresident2020
+    # ).get_df(
+    #     survey_support_rate_in_percent_bool=True,
+    # )
+    # # print(df)
+    # df.to_excel(
+    #     'ElectionPollsPresident2020.xlsx',
+    #     index=False,
+    #     engine='xlsxwriter',
+    # )
