@@ -191,6 +191,24 @@ class ElectionPolls:
                     .replace(" ", "")
                     # 處理同單位變名
                     .replace("東森新聞", "東森")
+                    .replace("東森", "東森/ETtoday")
+                    .replace("ETtoday新聞雲", "東森/ETtoday")
+
+                    .replace("中國時報", "中時")
+                    .replace("旺旺中時", "中時")
+
+                    .replace("蘋果新聞網", "蘋果")
+                    .replace("蘋果日報", "蘋果")
+
+                    .replace("民調", "")
+                    .replace("臺灣", "台灣")
+                    .replace("決策／精湛", "決策")
+                    .replace("世新大學[1]", "世新大學")
+                    .replace("民主進步黨", "民進黨")
+                    .replace("中國國民黨", "國民黨")
+                    .replace("台湾指标", "台灣指標")
+                    .replace("聯合報系", "聯合報")
+                    .replace("美麗島電子報", "美麗島")
                 )
             )
         )
