@@ -1,3 +1,5 @@
+from typing_extensions import Literal
+from plotly.subplots import make_subplots
 import datetime
 import re
 import plotly.graph_objects as go
@@ -242,10 +244,12 @@ class ElectionPolls:
             cls.result_support_rate_dict.keys(), survey_percent_arr_list
         ):
             df[person_name] = survey_percent_arr
-            if survey_support_rate_in_percent_bool:
-                df[person_name] = df[person_name].map(
-                    lambda percent: f"{percent:.2%}"
+            df[person_name] = df[person_name].map(
+                lambda percent: (
+                    f"{percent:.2%}" if survey_support_rate_in_percent_bool else
+                    round(percent, 3)
                 )
+            )
         df["民調準確度"] = df["民調準確度"].map(
             lambda cos_similarity: round(cos_similarity, 5)
         )
@@ -375,6 +379,18 @@ class ElectionPolls:
                 ),
             )
         )
+
+        fig.add_annotation(
+            text="選舉結果",
+            x=result_person_a_support_rate,
+            y=1.006,
+            showarrow=False,
+            font=dict(
+                color='red',
+                size=15,
+            ),
+        )
+
         fig.update_traces(textposition='top center')
 
         fig.update_layout(
@@ -391,6 +407,47 @@ class ElectionPolls:
                 'scrollZoom': True,
             }
         )
+
+    @classmethod
+    def plot_survey_table(cls):
+        """ 繪製民調結果表格
+        """
+
+        df = cls.get_df()
+
+        fig = make_subplots(
+            rows=2, cols=1,
+            shared_xaxes=False,
+            vertical_spacing=0.03,
+            specs=[
+                [{"type": "table"}],
+                [{"type": "table"}],
+            ]
+        )
+
+        fig.add_trace(
+            go.Table(
+                header=dict(values=list(
+                    cls.result_support_rate_dict.keys())),
+                cells=dict(
+                    values=[
+                        round(result_support_percent, 3)
+                        for result_support_percent in cls.get_result_support_percent_arr()
+                    ]
+                ),
+            ),
+            row=1, col=1
+        )
+
+        fig.add_trace(
+            go.Table(
+                header=dict(values=df.columns.tolist()),
+                cells=dict(values=df.values.T.tolist()),
+            ),
+            row=2, col=1
+        )
+
+        fig.show()
 
 
 class ElectionPollsPresident2012(ElectionPolls):
@@ -509,3 +566,76 @@ class ElectionPollsPresident2020(ElectionPolls):
         _, survey_date_str = survey_date_str.split("－")
         survey_date_m, survey_date_d = survey_date_str.split("-")
         return f"2019-{survey_date_m}-{survey_date_d}"
+
+
+def plot_survey_ranking_table(
+    by: Literal['mean', 'median'] = 'median',
+):
+    """ 繪製民調結果準確度排名表格
+
+    Args:
+        by: 排名方式, 'mean' 或 'median'
+    """
+    survey_score_df = pd.DataFrame()
+    for ElectionPoll in ElectionPolls.__subclasses__():
+        sub_df = ElectionPoll.get_df()
+        survey_score_df = pd.concat(
+            [
+                survey_score_df,
+                sub_df[
+                    [
+                        "調查單位",
+                        "民調準確度",
+                    ]
+                ],
+            ]
+        )
+
+    survey_score_mean_df = survey_score_df.groupby("調查單位").agg(
+        **{
+            '民調準確度(中位數)': ('民調準確度', 'median'),
+            '民調準確度(平均值)': ('民調準確度', 'mean'),
+            '樣本數': ('民調準確度', 'count'),
+        },
+    )
+
+    survey_score_mean_df.reset_index(inplace=True)
+
+    survey_score_mean_df.sort_values(
+        by=(
+            "民調準確度(中位數)" if (by == 'median') else
+            "民調準確度(平均值)"
+        ),
+        ascending=False,
+        inplace=True,
+    )
+
+    # 將分數表為小數點後7位數
+    survey_score_mean_df["民調準確度(中位數)"] = survey_score_mean_df["民調準確度(中位數)"].map(
+        lambda x: f"{x:.7f}",
+    )
+    survey_score_mean_df["民調準確度(平均值)"] = survey_score_mean_df["民調準確度(平均值)"].map(
+        lambda x: f"{x:.7f}",
+    )
+
+    # 給予排名欄位
+    survey_score_mean_df.insert(
+        loc=0,
+        column='排名',
+        value=range(1, len(survey_score_mean_df) + 1),
+    )
+
+    fig = go.Figure(
+        data=[
+            go.Table(
+                header=dict(
+                    values=survey_score_mean_df.columns,
+                ),
+                cells=dict(
+                    values=survey_score_mean_df.T.values,
+                )
+            ),
+        ],
+    )
+
+    fig.show()
