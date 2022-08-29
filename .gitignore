@@ -161,3 +161,6 @@ cython_debug/
 
 venv_home/
 *.xlsx
+
+# Mac
+.DS_Store
