@@ -55,10 +55,10 @@ class ElectionPolls:
         html_path = Path(__file__)/f'../html/{cls.__name__}.html'
 
         if html_path.exists():
-            with html_path.open('r', encoding='utf8') as f:
+            with html_path.resolve().open('r', encoding='utf8') as f:
                 return f.read()
 
-        with html_path.open('w', encoding='utf8') as f:
+        with html_path.resolve().open('w', encoding='utf8') as f:
             response = requests.get(cls.url)
             f.write(response.text)
         return response.text
@@ -111,7 +111,7 @@ class ElectionPolls:
         return raw_df
 
     @classmethod
-    def formate_survey_date_str(cls, survey_date_str: str) -> str:
+    def format_survey_date_str(cls, survey_date_str: str) -> str:
         """ 格式化民調日期字串，如: '2020年01月01日' -> '2020-01-01'
 
         Args:
@@ -214,10 +214,11 @@ class ElectionPolls:
                 )
             )
         )
+        print(df["調查單位"])
 
         # 獲取調查結束時間
         df["調查時間"] = pd.to_datetime(
-            raw_df[raw_df.columns[1]].map(cls.formate_survey_date_str)
+            raw_df[raw_df.columns[1]].map(cls.format_survey_date_str)
         )
 
         # 獲取調查結束時間離選舉的天數
@@ -562,7 +563,7 @@ class ElectionPollsPresident2020(ElectionPolls):
     }
 
     @classmethod
-    def formate_survey_date_str(cls, survey_date_str: str) -> str:
+    def format_survey_date_str(cls, survey_date_str: str) -> str:
         _, survey_date_str = survey_date_str.split("－")
         survey_date_m, survey_date_d = survey_date_str.split("-")
         return f"2019-{survey_date_m}-{survey_date_d}"
