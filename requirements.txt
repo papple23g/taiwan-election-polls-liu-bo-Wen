@@ -3,3 +3,4 @@ plotly == 5.7.0
 requests == 2.27.1
 lxml
 xlsxwriter
+typing_extensions
