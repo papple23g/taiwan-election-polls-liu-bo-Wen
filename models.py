@@ -52,7 +52,7 @@ class ElectionPolls:
         Returns:
             str: 網頁內容
         """
-        html_path = Path(__file__)/f'../html/{cls.__name__}.html'
+        html_path = Path(__file__).parent/f'html/{cls.__name__}.html'
 
         if html_path.exists():
             with html_path.resolve().open('r', encoding='utf8') as f:
