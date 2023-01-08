@@ -1,14 +1,16 @@
-from typing_extensions import Literal
-from plotly.subplots import make_subplots
 import datetime
+import os
 import re
-import plotly.graph_objects as go
-import plotly.express as px
-import numpy as np
 from pathlib import Path
-from typing import Dict, List, Tuple
+from typing import Dict, List, Tuple, cast
+
+import numpy as np
 import pandas as pd
+import plotly.express as px
+import plotly.graph_objects as go
 import requests
+from plotly.subplots import make_subplots
+from typing_extensions import Literal
 
 
 class ElectionPolls:
@@ -145,7 +147,9 @@ class ElectionPolls:
                 [候選人名稱...]
         """
 
-        def get_survey_percent_arr_and_cos_similarity(row_dict: dict) -> Tuple[float, float, float, float]:
+        def get_survey_percent_arr_and_cos_similarity(
+            row_dict: Dict[str, str]
+        ) -> Tuple[float, float, float, float]:
             """ 獲取歸一化後的民調百分比以及和選舉結果的 [餘弦相似度]
 
             Returns:
@@ -188,7 +192,8 @@ class ElectionPolls:
                     r"\d+$",
                     "",
                     (
-                        unit_str.split("（")[0] if "（" in unit_str else unit_str
+                        cast(str, unit_str)
+                        .split("（")[0] if "（" in unit_str else unit_str
                     )
                     .replace(" ", "")
                     # 處理同單位變名
@@ -223,8 +228,9 @@ class ElectionPolls:
 
         # 獲取調查結束時間離選舉的天數
         df["選舉倒數"] = df["調查時間"].map(
-            lambda date: (
-                cls.result_date - date.date()
+            lambda dt: (
+                cls.result_date
+                - cast(datetime.datetime, dt).date()
             ).days
         )
 
