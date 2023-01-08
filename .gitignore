@@ -164,3 +164,5 @@ venv_home/
 
 # Mac
 .DS_Store
+
+chart_html/*.html

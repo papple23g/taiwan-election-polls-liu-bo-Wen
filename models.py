@@ -333,11 +333,13 @@ class ElectionPolls:
             ),
         )
 
-        fig.show(
-            config={
-                'scrollZoom': True,
-            }
+        # 匯出 html 檔案並開啟
+        html_path = (
+            Path(__file__).parent / 'chart_html'
+            / f"{cls.__name__}_ternary.html"
         )
+        fig.write_html(html_path)
+        os.startfile(html_path)
 
     @classmethod
     def plot_scatter(cls):
@@ -403,11 +405,13 @@ class ElectionPolls:
             yaxis_title='民調準確度',
         )
 
-        fig.show(
-            config={
-                'scrollZoom': True,
-            }
+        # 匯出 html 檔案並開啟
+        html_path = (
+            Path(__file__).parent / 'chart_html'
+            / f"{cls.__name__}_scatter.html"
         )
+        fig.write_html(html_path)
+        os.startfile(html_path)
 
     @classmethod
     def plot_survey_table(cls):
@@ -448,7 +452,13 @@ class ElectionPolls:
             row=2, col=1
         )
 
-        fig.show()
+        # 匯出 html 檔案並開啟
+        html_path = (
+            Path(__file__).parent / 'chart_html'
+            / f"{cls.__name__}_survey_table.html"
+        )
+        fig.write_html(html_path)
+        os.startfile(html_path)
 
 
 class ElectionPollsPresident2012(ElectionPolls):
@@ -639,4 +649,10 @@ def plot_survey_ranking_table(
         ],
     )
 
-    fig.show()
+    # 匯出 html 檔案並開啟
+    html_path = (
+        Path(__file__).parent / 'chart_html'
+        / f"survey_ranking_table.html"
+    )
+    fig.write_html(html_path)
+    os.startfile(html_path)
