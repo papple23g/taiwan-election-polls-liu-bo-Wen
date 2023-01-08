@@ -261,14 +261,15 @@ class ElectionPolls:
             lambda cos_similarity: round(cos_similarity, 5)
         )
 
-        # 根據 [餘弦相似度] 排序資料
-        df.sort_values(by="民調準確度", ascending=False, inplace=True)
-
-        # 排除重複的調查單位，只留下該單位多次的民調中，[餘弦相似度] 最高的民調結果
+        # 排除重複的調查單位，只留下該單位的最新一筆資料 (封關民調)
+        df.sort_values(by="調查時間", ascending=False, inplace=True)
         df.drop_duplicates(
             subset=["調查單位"],
             inplace=True,
         )
+
+        # 根據 [餘弦相似度] 排序資料
+        df.sort_values(by="民調準確度", ascending=False, inplace=True)
 
         # 給予排名欄位
         df.insert(
