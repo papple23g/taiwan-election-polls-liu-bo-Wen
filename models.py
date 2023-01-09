@@ -209,10 +209,12 @@ class ElectionPolls:
                         .split("（")[0] if "（" in unit_str else unit_str
                     )
                     .replace(" ", "")
+
                     # 處理同單位變名
                     .replace("東森新聞", "東森")
                     .replace("東森", "東森/ETtoday")
                     .replace("ETtoday新聞雲", "東森/ETtoday")
+                    .replace("ettoday", "東森/ETtoday")
 
                     .replace("中國時報", "中時")
                     .replace("旺旺中時", "中時")
@@ -229,6 +231,10 @@ class ElectionPolls:
                     .replace("台湾指标", "台灣指標")
                     .replace("聯合報系", "聯合報")
                     .replace("美麗島電子報", "美麗島")
+
+                    .replace("震撼世代傳媒", "震傳媒")
+
+                    .replace("台灣蓋洛普", "蓋洛普")
                 )
             )
         )
