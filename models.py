@@ -440,8 +440,8 @@ class ElectionPolls:
         os.startfile(html_path)
 
     @classmethod
-    def plot_survey_table(cls):
-        """ 繪製民調結果表格
+    def plot_survey_ranking_table(cls):
+        """ 民調機構排名表
         """
 
         df = cls.get_df()
@@ -485,6 +485,16 @@ class ElectionPolls:
         )
         fig.write_html(html_path)
         os.startfile(html_path)
+
+    @classmethod
+    def plot(cls):
+        """ 繪製所有圖表 (三元圖/二元點陣圖、民調機構排名表)
+        """
+        if len(cls.result_support_rate_dict) == 3:
+            cls.plot_ternary()
+        elif len(cls.result_support_rate_dict) == 2:
+            cls.plot_scatter()
+        cls.plot_survey_ranking_table()
 
 
 class ElectionPollsPresident2012(ElectionPolls):
