@@ -105,7 +105,7 @@ class ElectionPolls:
             if raw_df is None:
                 raise ValueError("未找到民調資料表")
         else:
-        raw_df = raw_df_list[cls.table_index]
+            raw_df = raw_df_list[cls.table_index]
 
         # 重整欄位列表
         raw_df.columns = [cols[-1] for cols in raw_df.columns]
@@ -613,6 +613,66 @@ class ElectionPollsPresident2020(ElectionPolls):
         _, survey_date_str = survey_date_str.split("－")
         survey_date_m, survey_date_d = survey_date_str.split("-")
         return f"2019-{survey_date_m}-{survey_date_d}"
+
+
+class ElectionPollsTaipeiCity2022(ElectionPolls):
+    """ 2022年臺北市市長選舉民意調查
+    """
+    url = "https://zh.m.wikipedia.org/zh-tw/2022年中華民國直轄市長及縣市長選舉"
+    result_date = datetime.date(2022, 11, 26)
+    result_support_rate_dict = {
+        "蔣萬安": 42.29,
+        "陳時中": 31.93,
+        "黃珊珊": 25.14,
+    }
+
+
+class ElectionPollsNewTaipei2022(ElectionPolls):
+    """ 2022年新北市市長選舉民意調查
+    """
+    url = "https://zh.m.wikipedia.org/zh-tw/2022年中華民國直轄市長及縣市長選舉"
+    result_date = datetime.date(2022, 11, 26)
+    result_support_rate_dict = {
+        "侯友宜": 62.42,
+        "林佳龍": 37.58,
+    }
+
+
+class ElectionPollsTaoyuan2022(ElectionPolls):
+    """ 2022年桃園市市長選舉民意調查
+    """
+    url = "https://zh.m.wikipedia.org/zh-tw/2022年中華民國直轄市長及縣市長選舉"
+    result_date = datetime.date(2022, 11, 26)
+    table_index = 27
+    result_support_rate_dict = {
+        "張善政": 48.92,
+        "鄭運鵬": 43.61,
+    }
+
+    @classmethod
+    def get_raw_df(cls) -> pd.DataFrame:
+        """ 獲取網頁上的民調原始資料表格資料
+
+        Returns:
+            pd.DataFrame
+        """
+        # 獲取原始資料表
+        html_str = cls.get_html_str()
+        raw_df_list: List[pd.DataFrame] = pd.read_html(html_str)
+        raw_df = raw_df_list[cls.table_index]
+        return pd.DataFrame(raw_df.values[17:-1], columns=raw_df.iloc[16])
+
+
+class ElectionPollsHsinchuCity2022(ElectionPolls):
+    """ 2022年新竹市市長選舉民意調查
+    """
+    url = "https://zh.m.wikipedia.org/zh-tw/2022年中華民國直轄市長及縣市長選舉"
+    result_date = datetime.date(2022, 11, 26)
+    result_support_rate_dict = {
+        "高虹安": 45.02,
+        "沈慧虹": 35.68,
+        "林耕仁": 18.07,
+    }
 
 
 def plot_survey_ranking_table(
