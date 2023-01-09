@@ -20,7 +20,7 @@ class ElectionPolls:
     # 選舉民調網頁
     url: str = None
     # 民調資料表 table 在選舉民調網頁中的索引
-    table_index: int = 0
+    table_index: int = None
     # 選舉結果
     result_support_rate_dict: Dict[str, float]
     # 選舉日期
@@ -92,6 +92,19 @@ class ElectionPolls:
         # 獲取原始資料表
         html_str = cls.get_html_str()
         raw_df_list: List[pd.DataFrame] = pd.read_html(html_str)
+
+        # 根據 table_index 或 docstring 來獲取民調資料表
+        if cls.table_index is None:
+            raw_df = next(
+                (
+                    raw_df
+                    for raw_df in raw_df_list
+                    if cls.__doc__.strip() in raw_df.columns
+                ), None
+            )
+            if raw_df is None:
+                raise ValueError("未找到民調資料表")
+        else:
         raw_df = raw_df_list[cls.table_index]
 
         # 重整欄位列表
